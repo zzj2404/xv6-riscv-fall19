@@ -49,7 +49,7 @@ void bit_set(char *array, int index) {
   array[index/8] = (b | m);
 }
 
-// Clear bit at position index in array
+// Set bit at position index in array to 0
 void bit_clear(char *array, int index) {
   char b = array[index/8];
   char m = (1 << (index % 8));
@@ -57,6 +57,7 @@ void bit_clear(char *array, int index) {
 }
 
 // Print a bit vector as a list of ranges of 1 bits
+//把vector中连续的为1的位以区间的形式print
 void
 bd_print_vector(char *vector, int len) {
   int last, lb;
@@ -93,6 +94,7 @@ bd_print() {
 }
 
 // What is the first k such that 2^k >= n?
+//找到最小的满足内存需要的层
 int
 firstk(uint64 n) {
   int k = 0;
@@ -106,6 +108,7 @@ firstk(uint64 n) {
 }
 
 // Compute the block index for address p at size k
+//计算地址p在第k层的第几块
 int
 blk_index(int k, char *p) {
   int n = p - (char *) bd_base;
@@ -113,6 +116,7 @@ blk_index(int k, char *p) {
 }
 
 // Convert a block index at size k back into an address
+//是上一个函数的逆过程
 void *addr(int k, int bi) {
   int n = bi * BLK_SIZE(k);
   return (char *) bd_base + n;
@@ -136,7 +140,8 @@ bd_malloc(uint64 nbytes)
     release(&lock);
     return 0;
   }
-
+  
+  //此时k==最小的有空闲块的层
   // Found a block; pop it and potentially split it.
   char *p = lst_pop(&bd_sizes[k].free);
   bit_set(bd_sizes[k].alloc, blk_index(k, p));
@@ -309,7 +314,7 @@ bd_init(void *base, void *end) {
   printf("bd: memory sz is %d bytes; allocate an size array of length %d\n",
          (char*) end - p, nsizes);
 
-  // allocate bd_sizes array
+  // allocate bd_sizes array//元数据
   bd_sizes = (Sz_info *) p;
   p += sizeof(Sz_info) * nsizes;
   memset(bd_sizes, 0, sizeof(Sz_info) * nsizes);
